@@ -30,7 +30,7 @@ kotlin {
         commonMain.dependencies {
             api(libs.kotlinx.coroutines.core)
             api(libs.kotlinx.serialization.json)
-            api("com.github.connecttag:app-metadata-lib-kmp:1.1.0")
+            api("com.github.connecttag.app-metadata-lib-kmp:app-metadata-lib-kmp:1.1.0")
         }
     }
 }
