@@ -226,4 +226,143 @@ public object StandardAppRiskEngine {
             unexpectedPermissionCount = unexpectedCritical.size + unexpectedHigh.size
         )
     }
+
+    /**
+     * Aggregates fleet risk verdicts into an overarching Fleet Privacy & Security Health report.
+     * Pure Kotlin Multiplatform (SSOT across SoorNet and Hazm).
+     */
+    public fun calculateFleetHealth(verdicts: Collection<StandardAppRiskVerdict>): FleetPrivacyHealth {
+        if (verdicts.isEmpty()) {
+            return FleetPrivacyHealth(
+                overallHealthScore = 100,
+                totalAppsAnalyzed = 0,
+                criticalRiskCount = 0,
+                highRiskCount = 0,
+                mediumRiskCount = 0,
+                safeCount = 0,
+                averageRiskScore = 0.0,
+                ratingAr = "ممتاز - لا توجد تطبيقات",
+                ratingEn = "Excellent - No Apps"
+            )
+        }
+
+        var critical = 0
+        var high = 0
+        var medium = 0
+        var safe = 0
+        var totalRisk = 0
+
+        for (v in verdicts) {
+            totalRisk += v.riskScore
+            when {
+                v.riskScore >= 75 -> critical++
+                v.riskScore >= 50 -> high++
+                v.riskScore >= 25 -> medium++
+                else -> safe++
+            }
+        }
+
+        val avgRisk = totalRisk.toDouble() / verdicts.size
+        val baseScore = (100.0 - avgRisk).toInt().coerceIn(0, 100)
+        // Additional penalty if critical vulnerabilities are present
+        val penalty = (critical * 10 + high * 4).coerceAtMost(30)
+        val overallHealth = (baseScore - penalty).coerceIn(0, 100)
+
+        val (ratingAr, ratingEn) = when {
+            overallHealth >= 85 -> "ممتاز" to "Excellent"
+            overallHealth >= 70 -> "جيد جداً" to "Very Good"
+            overallHealth >= 50 -> "متوسط - يحتاج مراجعة" to "Fair - Needs Review"
+            overallHealth >= 30 -> "ضعيف - مخاطر مرتفعة" to "Poor - High Risk"
+            else -> "حرج - جهاز معرض للخطر" to "Critical - In Danger"
+        }
+
+        return FleetPrivacyHealth(
+            overallHealthScore = overallHealth,
+            totalAppsAnalyzed = verdicts.size,
+            criticalRiskCount = critical,
+            highRiskCount = high,
+            mediumRiskCount = medium,
+            safeCount = safe,
+            averageRiskScore = avgRisk,
+            ratingAr = ratingAr,
+            ratingEn = ratingEn
+        )
+    }
+
+    /**
+     * Aggregates raw integer risk scores into a FleetPrivacyHealth report.
+     */
+    public fun calculateFleetHealthFromScores(scores: Collection<Int>): FleetPrivacyHealth {
+        if (scores.isEmpty()) {
+            return FleetPrivacyHealth(
+                overallHealthScore = 100,
+                totalAppsAnalyzed = 0,
+                criticalRiskCount = 0,
+                highRiskCount = 0,
+                mediumRiskCount = 0,
+                safeCount = 0,
+                averageRiskScore = 0.0,
+                ratingAr = "ممتاز",
+                ratingEn = "Excellent"
+            )
+        }
+
+        var critical = 0
+        var high = 0
+        var medium = 0
+        var safe = 0
+        var totalRisk = 0
+
+        for (score in scores) {
+            val clamped = score.coerceIn(0, 100)
+            totalRisk += clamped
+            when {
+                clamped >= 75 -> critical++
+                clamped >= 50 -> high++
+                clamped >= 25 -> medium++
+                else -> safe++
+            }
+        }
+
+        val avgRisk = totalRisk.toDouble() / scores.size
+        val baseScore = (100.0 - avgRisk).toInt().coerceIn(0, 100)
+        val penalty = (critical * 10 + high * 4).coerceAtMost(30)
+        val overallHealth = (baseScore - penalty).coerceIn(0, 100)
+
+        val (ratingAr, ratingEn) = when {
+            overallHealth >= 85 -> "ممتاز" to "Excellent"
+            overallHealth >= 70 -> "جيد جداً" to "Very Good"
+            overallHealth >= 50 -> "متوسط - يحتاج مراجعة" to "Fair - Needs Review"
+            overallHealth >= 30 -> "ضعيف - مخاطر مرتفعة" to "Poor - High Risk"
+            else -> "حرج - جهاز معرض للخطر" to "Critical - In Danger"
+        }
+
+        return FleetPrivacyHealth(
+            overallHealthScore = overallHealth,
+            totalAppsAnalyzed = scores.size,
+            criticalRiskCount = critical,
+            highRiskCount = high,
+            mediumRiskCount = medium,
+            safeCount = safe,
+            averageRiskScore = avgRisk,
+            ratingAr = ratingAr,
+            ratingEn = ratingEn
+        )
+    }
 }
+
+/**
+ * Aggregated summary of fleet/device privacy health across all installed applications.
+ */
+@Serializable
+public data class FleetPrivacyHealth(
+    val overallHealthScore: Int,
+    val totalAppsAnalyzed: Int,
+    val criticalRiskCount: Int,
+    val highRiskCount: Int,
+    val mediumRiskCount: Int,
+    val safeCount: Int,
+    val averageRiskScore: Double,
+    val ratingAr: String,
+    val ratingEn: String
+)

@@ -467,6 +467,7 @@ public object AppClassificationPolicy {
 
     /**
      * Resolves the canonical StandardAppCategory based on package name and app label.
+     * Delegates to [org.connecttag.lib.kmp.appmetadata.AppCategoryDetector].
      */
     public fun resolveCategory(
         packageName: String,
@@ -474,77 +475,11 @@ public object AppClassificationPolicy {
         isSystem: Boolean = false,
         uid: Int = 10000
     ): StandardAppCategory {
-        val lowerPkg = packageName.trim().lowercase()
-        val lowerName = appName?.trim()?.lowercase().orEmpty()
-        if (lowerPkg.isBlank() || uid < 0) return StandardAppCategory.UNKNOWN
-
-        // 1. Critical System Applications (UID < 10000)
-        if (uid % 100000 < 10000) {
-            return when {
-                lowerPkg == "android" -> StandardAppCategory.SYSTEM_CRITICAL
-                lowerPkg.startsWith("com.android.phone") -> StandardAppCategory.SYSTEM_CRITICAL
-                lowerPkg.startsWith("com.android.systemui") -> StandardAppCategory.SYSTEM_CRITICAL
-                else -> StandardAppCategory.SYSTEM
-            }
-        }
-
-        // 2. Google Services & OS Framework Apps
-        if (lowerPkg.startsWith("com.google.") || lowerPkg.startsWith("com.android.")) {
-            return when {
-                lowerPkg.contains("gms") || lowerPkg.contains("gsf") -> StandardAppCategory.GOOGLE_SERVICES
-                lowerPkg.contains("chrome") -> StandardAppCategory.BROWSER
-                lowerPkg.contains("gmail") -> StandardAppCategory.EMAIL
-                lowerPkg.contains("youtube") -> StandardAppCategory.MEDIA
-                lowerPkg.contains("maps") -> StandardAppCategory.NAVIGATION
-                else -> StandardAppCategory.GOOGLE_SERVICES
-            }
-        }
-
-        // 3. Modified Apps (WhatsApp Gold, GBWhatsApp, Instander, etc.)
-        if (isModifiedApp(lowerPkg, lowerName)) {
-            return StandardAppCategory.MODIFIED_APPS
-        }
-
-        // 4. Caller ID / Number Book apps
-        if (CALLER_ID_KEYWORDS.any { lowerName.contains(it) || lowerPkg.contains(it) }) {
-            return StandardAppCategory.CALLER_ID
-        }
-
-        // 5. Banking & Wallets
-        if (FINANCIAL_KEYWORDS.any { lowerName.contains(it) || lowerPkg.contains(it) }) {
-            return StandardAppCategory.BANKING
-        }
-
-        // 6. Social Media & Messaging
-        if (isSocialMediaApp(lowerPkg, lowerName)) return StandardAppCategory.SOCIAL_MEDIA
-        if (isMessagingApp(lowerPkg, lowerName)) return StandardAppCategory.MESSAGING
-
-        // 7. Browsers
-        if (lowerPkg.contains("browser") || lowerPkg.contains("firefox") ||
-            lowerPkg.contains("opera") || lowerPkg.contains("brave")) {
-            return StandardAppCategory.BROWSER
-        }
-
-        // 8. Navigation & Maps
-        if (isNavigationApp(lowerPkg, lowerName)) return StandardAppCategory.NAVIGATION
-
-        // 9. Games & Media
-        if (isGameApp(lowerPkg, lowerName)) return StandardAppCategory.GAME
-        if (isMediaApp(lowerPkg, lowerName)) return StandardAppCategory.MEDIA
-
-        // 10. VPN & Security
-        if (lowerPkg.contains("vpn") || lowerPkg.contains("tunnel")) return StandardAppCategory.VPN
-        if (lowerPkg.contains("security") || lowerPkg.contains("antivirus") || lowerPkg.contains("soornet")) {
-            return StandardAppCategory.SECURITY
-        }
-
-        // 11. Known suspicious blacklisted packages
-        if (DEFAULT_BLACKLISTED_APPS.contains(lowerPkg)) {
-            return StandardAppCategory.SUSPICIOUS
-        }
-
-        // 12. Generic System vs User App
-        if (isSystem) return StandardAppCategory.SYSTEM
-        return if (lowerPkg.isNotBlank()) StandardAppCategory.USER_APP else StandardAppCategory.UNKNOWN
+        return org.connecttag.lib.kmp.appmetadata.AppCategoryDetector.detect(
+            packageName = packageName,
+            appLabel = appName,
+            isSystem = isSystem,
+            uid = uid
+        )
     }
 }

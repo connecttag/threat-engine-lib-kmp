@@ -15,12 +15,12 @@ public enum class RiskLevel {
 }
 
 @Serializable
-public enum class ThreatSeverity {
-    SAFE,
-    LOW,
-    MEDIUM,
-    HIGH,
-    CRITICAL;
+public enum class ThreatSeverity(public val levelScore: Int, public val displayNameAr: String) {
+    SAFE(0, "آمن"),
+    LOW(20, "منخفض الخطورة"),
+    MEDIUM(50, "متوسط الخطورة"),
+    HIGH(75, "عالي الخطورة"),
+    CRITICAL(100, "تهديد حرج / خبيث");
 
     public companion object {
         public fun fromString(value: String?): ThreatSeverity {
@@ -34,25 +34,25 @@ public enum class ThreatSeverity {
  * Cyber Threat Classification Categories across network and application security.
  */
 @Serializable
-public enum class ThreatCategory {
-    SAFE,
-    PHISHING,
-    MALWARE,
-    MALWARE_SIGNATURE,
-    BOTNET_C2,
-    SPYWARE,
-    BANKING_TROJAN,
-    RANSOMWARE,
-    ACCESSIBILITY_ABUSE,
-    OVERLAY_HIJACK,
-    SUSPICIOUS_SIDELOAD,
-    SUSPICIOUS_HEURISTIC,
-    MALICIOUS_APK_FILE,
-    SCAM,
-    ADWARE,
-    SUSPICIOUS,
-    TRACKER,
-    UNKNOWN;
+public enum class ThreatCategory(public val displayNameAr: String, public val descriptionAr: String) {
+    SAFE("آمن", "لا توجد أي شبهة أمنية"),
+    PHISHING("تصيد احتيالي", "محاولة سرقة بيانات الاعتماد أو المعلومات الشخصية"),
+    MALWARE("برمجية خبيثة", "برمجية ضارة تستهدف استغلال النظام وإلحاق الضرر"),
+    MALWARE_SIGNATURE("برمجية خبيثة معروفة", "تطابق البصمة مع قاعدة بيانات الفيروسات والتروجانات المعروفة"),
+    BOTNET_C2("شبكة روبوتات خبيثة", "اتصال بخوادم تحكم وسيطرة C2 مشبوهة"),
+    SPYWARE("برمجية تجسس", "تطبيق يقوم بجمع البيانات والصوت والموقع والصور في الخلفية دون علم المستخدم"),
+    BANKING_TROJAN("تروجان مصرفي", "تطبيق يحاول استهداف الحسابات البنكية والمحافظ المالية ومحاكاة شاشاتها"),
+    RANSOMWARE("برمجية فدية", "محاولة تشفير أو قفل ملفات الهاتف وطلب فدية"),
+    ACCESSIBILITY_ABUSE("إساءة استخدام إمكانية الوصول", "استغلال خدمات الوصول لمحاكاة النقرات وقراءة الشاشة خلسة"),
+    OVERLAY_HIJACK("هجوم النوافذ العائمة", "الرسم فوق تطبيقات أخرى لخداع المستخدم وسرقة بيانات الدخول"),
+    SUSPICIOUS_SIDELOAD("تطبيق خارجي مشبوه", "تثبيت من مصدر غير موثوق مع حزم أذونات حساسة مستهدفة"),
+    SUSPICIOUS_HEURISTIC("سلوك مشبوه / مخاطر عالية", "نمط أذونات استثنائية يستوجب المراجعة والحذر"),
+    MALICIOUS_APK_FILE("ملف APK خبيث بالتخزين", "حزمة تثبيت غير مثبتة موجودة بوحدة التخزين تحتوي على توقيع أو كود ضار"),
+    SCAM("احتيال ونصب", "خداع المستخدم للحصول على أموال أو مكاسب غير مشروعة"),
+    ADWARE("إعلانات مزعجة ومتطفلة", "عرض إعلانات قسرية واعتراض تجربة الاستخدام"),
+    SUSPICIOUS("مشبوه", "سلوك غير اعتيادي يحتاج إلى تدقيق ومتابعة"),
+    TRACKER("متتبع خصوصية", "مكتبة تتبع تجمع سلوك المستخدم ونشاطه"),
+    UNKNOWN("غير محدد", "تصنيف غير معروف");
 
     public companion object {
         public fun fromString(value: String?): ThreatCategory {
@@ -80,7 +80,24 @@ public data class ThreatReport(
     val isResolved: Boolean = false,
     val isInstalledApp: Boolean = true,
     val riskScore: Int = 0
-)
+) {
+    public companion object {
+        public fun clean(packageName: String, appName: String): ThreatReport {
+            return ThreatReport(
+                packageName = packageName,
+                appName = appName,
+                filePath = null,
+                fileHashSha256 = null,
+                severity = ThreatSeverity.SAFE,
+                category = ThreatCategory.SAFE,
+                title = "تطبيق آمن",
+                description = "لم يتم العثور على أي تهديدات أمنية أو سلوكيات مريبة.",
+                isInstalledApp = true,
+                riskScore = 0
+            )
+        }
+    }
+}
 
 /**
  * Cross-Platform OS Permission Model (Android, iOS, Windows)

@@ -57,7 +57,7 @@ public class IpRadixTree {
                 val prefix = prefixLenOverride?.coerceIn(0, 128) ?: 128
                 insertIpv6(inetAddr.address, prefix, feedName, category)
             }
-            else -> {}
+            else -> return
         }
     }
 
