@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "org.connecttag.libs.kotlin"
-version = "1.1.0"
+version = "1.1.1"
 
 kotlin {
     jvmToolchain(21)
